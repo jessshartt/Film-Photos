@@ -35,12 +35,22 @@
       "photos/Image from iOS (14).jpg",
     ];
 
+    function showGallery() {
+      document.getElementById("gate").style.display = "none";
+      document.getElementById("gallery").style.display = "block";
+      loadPhotos();
+    }
+
+    // Skip password if already authenticated
+    if (localStorage.getItem("film_auth") === "true") {
+      showGallery();
+    }
+
     function checkPassword() {
       const input = document.getElementById("password-input").value;
       if (input === PASSWORD) {
-        document.getElementById("gate").style.display = "none";
-        document.getElementById("gallery").style.display = "block";
-        loadPhotos();
+        localStorage.setItem("film_auth", "true");
+        showGallery();
       } else {
         document.getElementById("error-msg").style.display = "block";
       }
