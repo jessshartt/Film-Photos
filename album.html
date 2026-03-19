@@ -94,76 +94,86 @@
       }
     }
 
-    // ── Scrapbook ──
-    function getTheme(id, name) {
-      const t = (id + " " + name).toLowerCase();
-      if (/aspen|ski|snow|winter|mountain|alps|lodge|cabin/.test(t)) return "winter";
-      if (/beach|ocean|hawaii|surf|summer|tropic|island/.test(t)) return "beach";
-      if (/city|nyc|london|paris|urban|street/.test(t)) return "city";
-      return "default";
+    // ── Scrapbook / Book view ──
+    let bookPage = 0;
+    let bookPageCount = 0;
+
+    // Cycle of page layouts: each defines how many photos and which CSS class
+    const CYCLE_LAYOUTS = [
+      { count: 4, cls: "l-2x2" },
+      { count: 3, cls: "l-hero-right" },
+      { count: 2, cls: "l-duo" },
+      { count: 6, cls: "l-3x2" },
+      { count: 3, cls: "l-hero-top" },
+      { count: 5, cls: "l-mosaic" },
+    ];
+
+    function fitLayout(n) {
+      if (n >= 6) return { count: 6, cls: "l-3x2" };
+      if (n === 5) return { count: 5, cls: "l-mosaic" };
+      if (n === 4) return { count: 4, cls: "l-2x2" };
+      if (n === 3) return { count: 3, cls: "l-hero-right" };
+      if (n === 2) return { count: 2, cls: "l-duo" };
+      return { count: 1, cls: "l-solo" };
     }
 
-    const DECORATIONS = {
-      winter: [
-        `<svg viewBox="0 0 140 68" width="140" height="68" xmlns="http://www.w3.org/2000/svg"><g stroke="#9a8f82" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2,64 L36,14 L56,42 L80,8 L106,40 L120,22 L138,64"/></g></svg>`,
-        `<svg viewBox="0 0 44 84" width="44" height="84" xmlns="http://www.w3.org/2000/svg"><g stroke="#9a8f82" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="22,4 7,27 15,27 4,49 13,49 6,70 38,70 31,49 40,49 29,27 37,27 22,4"/><line x1="22" y1="70" x2="22" y2="81"/></g></svg>`,
-        `<svg viewBox="0 0 56 56" width="56" height="56" xmlns="http://www.w3.org/2000/svg"><g stroke="#b0a89e" stroke-width="1.1" fill="none" stroke-linecap="round"><line x1="28" y1="3" x2="28" y2="53"/><line x1="3" y1="28" x2="53" y2="28"/><line x1="10" y1="10" x2="46" y2="46"/><line x1="46" y1="10" x2="10" y2="46"/><line x1="28" y1="8" x2="22" y2="14"/><line x1="28" y1="8" x2="34" y2="14"/><line x1="28" y1="48" x2="22" y2="42"/><line x1="28" y1="48" x2="34" y2="42"/><line x1="8" y1="28" x2="14" y2="22"/><line x1="8" y1="28" x2="14" y2="34"/><line x1="48" y1="28" x2="42" y2="22"/><line x1="48" y1="28" x2="42" y2="34"/></g></svg>`,
-        `<svg viewBox="0 0 90 34" width="90" height="34" xmlns="http://www.w3.org/2000/svg"><g stroke="#b0a89e" stroke-width="1.1" fill="none" stroke-linecap="round"><path d="M3,9 C18,7 28,18 42,17 C56,16 65,8 87,11"/><path d="M3,24 C18,22 28,33 42,32 C56,31 65,23 87,26"/></g></svg>`,
-      ],
-      beach: [
-        `<svg viewBox="0 0 120 40" width="120" height="40" xmlns="http://www.w3.org/2000/svg"><g stroke="#9a8f82" stroke-width="1.1" fill="none" stroke-linecap="round"><path d="M2,30 C22,10 42,40 62,20 C82,0 102,30 118,18"/><path d="M2,36 C22,16 42,46 62,26 C82,6 102,36 118,24"/></g></svg>`,
-        `<svg viewBox="0 0 60 90" width="60" height="90" xmlns="http://www.w3.org/2000/svg"><g stroke="#9a8f82" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="30" y1="85" x2="30" y2="30"/><path d="M30,30 C30,30 10,20 8,5 C8,5 28,10 30,30Z"/><path d="M30,45 C30,45 50,35 52,20 C52,20 32,25 30,45Z"/></g></svg>`,
-        `<svg viewBox="0 0 70 70" width="70" height="70" xmlns="http://www.w3.org/2000/svg"><g stroke="#b0a89e" stroke-width="1.1" fill="none" stroke-linecap="round"><circle cx="35" cy="35" r="22"/><line x1="35" y1="8" x2="35" y2="13"/><line x1="35" y1="57" x2="35" y2="62"/><line x1="8" y1="35" x2="13" y2="35"/><line x1="57" y1="35" x2="62" y2="35"/><line x1="19" y1="19" x2="23" y2="23"/><line x1="47" y1="47" x2="51" y2="51"/><line x1="51" y1="19" x2="47" y2="23"/><line x1="23" y1="47" x2="19" y2="51"/></g></svg>`,
-      ],
-      city: [
-        `<svg viewBox="0 0 140 80" width="140" height="80" xmlns="http://www.w3.org/2000/svg"><g stroke="#9a8f82" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,78 2,50 14,50 14,35 22,35 22,50 30,50 30,20 44,20 44,50 52,50 52,40 64,40 64,50 72,50 72,28 86,28 86,50 94,50 94,44 106,44 106,50 114,50 114,32 128,32 128,50 138,50 138,78"/></g></svg>`,
-        `<svg viewBox="0 0 60 60" width="60" height="60" xmlns="http://www.w3.org/2000/svg"><g stroke="#b0a89e" stroke-width="1.1" fill="none" stroke-linecap="round"><circle cx="30" cy="30" r="20"/><circle cx="30" cy="30" r="3"/><line x1="30" y1="10" x2="30" y2="27"/><line x1="30" y1="30" x2="44" y2="30"/></g></svg>`,
-      ],
-      default: [
-        `<svg viewBox="0 0 80 56" width="80" height="56" xmlns="http://www.w3.org/2000/svg"><g stroke="#9a8f82" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="12" width="52" height="36" rx="3"/><circle cx="30" cy="30" r="11"/><circle cx="30" cy="30" r="5"/><path d="M56,22 L72,15 L72,45 L56,38"/><rect x="16" y="5" width="16" height="9" rx="2"/></g></svg>`,
-        `<svg viewBox="0 0 58 58" width="58" height="58" xmlns="http://www.w3.org/2000/svg"><g stroke="#9a8f82" stroke-width="1.1" fill="none" stroke-linecap="round"><circle cx="29" cy="29" r="5"/><ellipse cx="29" cy="13" rx="4" ry="8"/><ellipse cx="29" cy="13" rx="4" ry="8" transform="rotate(45 29 29)"/><ellipse cx="29" cy="13" rx="4" ry="8" transform="rotate(90 29 29)"/><ellipse cx="29" cy="13" rx="4" ry="8" transform="rotate(135 29 29)"/><ellipse cx="29" cy="13" rx="4" ry="8" transform="rotate(180 29 29)"/><ellipse cx="29" cy="13" rx="4" ry="8" transform="rotate(225 29 29)"/><ellipse cx="29" cy="13" rx="4" ry="8" transform="rotate(270 29 29)"/><ellipse cx="29" cy="13" rx="4" ry="8" transform="rotate(315 29 29)"/></g></svg>`,
-        `<svg viewBox="0 0 48 68" width="48" height="68" xmlns="http://www.w3.org/2000/svg"><g stroke="#9a8f82" stroke-width="1.1" fill="none" stroke-linecap="round"><path d="M24,64 C24,64 4,44 6,24 C8,8 24,4 24,4 C24,4 40,8 42,24 C44,44 24,64 24,64Z"/><line x1="24" y1="64" x2="24" y2="8"/><path d="M24,48 C17,41 11,34 9,26"/><path d="M24,36 C31,29 37,22 39,14"/></g></svg>`,
-        `<svg viewBox="0 0 50 50" width="50" height="50" xmlns="http://www.w3.org/2000/svg"><g stroke="#b0a89e" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="25,3 30,18 46,18 34,28 38,43 25,34 12,43 16,28 4,18 20,18"/></g></svg>`,
-      ]
-    };
-
-    function getDecorations(theme) {
-      return DECORATIONS[theme] || DECORATIONS.default;
-    }
-
-    function seededRandom(seed) {
-      const x = Math.sin(seed * 9301 + 49297) * 233280;
-      return x - Math.floor(x);
+    function buildPages() {
+      const pages = [];
+      let i = 0, cycleIdx = 0;
+      while (i < photos.length) {
+        const remaining = photos.length - i;
+        const next = CYCLE_LAYOUTS[cycleIdx % CYCLE_LAYOUTS.length];
+        const layout = remaining < next.count ? fitLayout(remaining) : next;
+        pages.push({ photos: photos.slice(i, i + layout.count), cls: layout.cls, startIdx: i });
+        i += layout.count;
+        if (remaining >= next.count) cycleIdx++;
+      }
+      return pages;
     }
 
     function renderScrapbook(container) {
-      const decs = getDecorations(currentTheme);
-      let decIdx = 0;
+      container.className = "book-wrap";
+      const pages = buildPages();
+      bookPageCount = pages.length;
+      bookPage = 0;
 
-      photos.forEach((src, i) => {
-        if (i > 0 && i % 3 === 0) {
-          const dec = document.createElement("div");
-          dec.className = "scrapbook-dec";
-          dec.innerHTML = decs[decIdx % decs.length];
-          decIdx++;
-          container.appendChild(dec);
-        }
+      container.innerHTML = `
+        <div class="book-slider" id="book-slider"></div>
+        <button class="book-prev" onclick="bookNav(-1)">‹</button>
+        <button class="book-next" onclick="bookNav(1)">›</button>
+        <div class="book-counter" id="book-counter">1 / ${bookPageCount}</div>
+      `;
 
-        const wrap = document.createElement("div");
-        wrap.className = "scrapbook-photo";
-        if (i % 5 === 2) wrap.classList.add("large");
-
-        const rot = (seededRandom(i) * 10 - 5).toFixed(2);
-        wrap.style.transform = `rotate(${rot}deg)`;
-
-        const img = document.createElement("img");
-        img.src = src;
-        img.alt = "";
-        img.loading = "lazy";
-        img.onclick = () => openLightbox(i);
-        wrap.appendChild(img);
-        container.appendChild(wrap);
+      const slider = document.getElementById("book-slider");
+      pages.forEach(page => {
+        const pageEl = document.createElement("div");
+        pageEl.className = `book-page ${page.cls}`;
+        page.photos.forEach((src, j) => {
+          const img = document.createElement("img");
+          img.src = src;
+          img.alt = "";
+          img.loading = "lazy";
+          img.onclick = () => openLightbox(page.startIdx + j);
+          pageEl.appendChild(img);
+        });
+        slider.appendChild(pageEl);
       });
+
+      // Swipe support
+      let touchStartX = 0;
+      slider.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+      slider.addEventListener("touchend", e => {
+        const diff = touchStartX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) bookNav(diff > 0 ? 1 : -1);
+      });
+    }
+
+    function bookNav(dir) {
+      const slider = document.getElementById("book-slider");
+      if (!slider) return;
+      bookPage = Math.max(0, Math.min(bookPage + dir, bookPageCount - 1));
+      slider.scrollTo({ left: bookPage * slider.clientWidth, behavior: "smooth" });
+      document.getElementById("book-counter").textContent = `${bookPage + 1} / ${bookPageCount}`;
     }
 
     // ── Lightbox ──
@@ -187,10 +197,14 @@
     }
 
     document.addEventListener("keydown", function(e) {
-      if (document.getElementById("lightbox").style.display === "none") return;
-      if (e.key === "ArrowRight") changePhoto(1);
-      if (e.key === "ArrowLeft") changePhoto(-1);
-      if (e.key === "Escape") closeLightbox();
+      if (document.getElementById("lightbox").style.display !== "none") {
+        if (e.key === "ArrowRight") changePhoto(1);
+        if (e.key === "ArrowLeft") changePhoto(-1);
+        if (e.key === "Escape") closeLightbox();
+      } else if (currentView === "scrapbook") {
+        if (e.key === "ArrowRight") bookNav(1);
+        if (e.key === "ArrowLeft") bookNav(-1);
+      }
     });
 
     // ── Favorites ──
