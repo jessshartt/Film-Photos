@@ -3,6 +3,16 @@
     "id": "test",
     "name": "Test",
     "date": "2026-03",
-    "photos": ["photos/Image from iOS (14).jpg"]
+    "photos": [
+      "photos/Image from iOS (14).jpg"
+    ]
+  },
+  {
+    "id": "aspen-2026",
+    "name": "Aspen 2026",
+    "date": "Jan 22-Jan 26",
+    "photos": [
+      "photos/aspen-2026/Image from iOS (14).jpg"
+    ]
   }
 ]
