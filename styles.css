@@ -445,8 +445,8 @@ body.scrapbook-bg {
 /* ── Manage Photos ── */
 .manage-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
   margin-top: 4px;
 }
 
@@ -506,7 +506,7 @@ body.scrapbook-bg {
   }
 
   .manage-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .lb-prev, .lb-next {
