@@ -305,7 +305,7 @@
       const albums = await res.json();
       const album = albums.find(a => a.id === albumId);
       if (!album || !album.photos.length) {
-        msg.textContent = "No photos in this album.";
+        msg.innerHTML = `No photos in this album. <button onclick="confirmDeleteAlbum('${albumId}')" style="margin-left:8px;padding:4px 10px;background:#333;border:1px solid #555;color:#ccc;border-radius:3px;cursor:pointer;font-size:0.8rem;">Delete Album</button>`;
         msg.style.display = "block";
         return;
       }
@@ -403,6 +403,29 @@
       } catch(e) {
         el.style.opacity = "1";
         el.style.pointerEvents = "auto";
+        alert("Delete failed: " + e.message);
+      }
+    }
+
+    function confirmDeleteAlbum(albumId) {
+      if (!confirm("Delete this album? This cannot be undone.")) return;
+      deleteAlbum(albumId);
+    }
+
+    async function deleteAlbum(albumId) {
+      try {
+        const albumsFile = await apiGet("albums.json");
+        const albumsData = JSON.parse(atob(albumsFile.content.replace(/\n/g, "")));
+        const idx = albumsData.findIndex(a => a.id === albumId);
+        if (idx !== -1) albumsData.splice(idx, 1);
+        const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(albumsData, null, 2))));
+        await apiPut("albums.json", newContent, `Delete album ${albumId}`, albumsFile.sha);
+        showSuccess("Album deleted.");
+        loadAlbumSelect();
+        loadManageSelect();
+        document.getElementById("manage-grid").innerHTML = "";
+        document.getElementById("manage-msg").style.display = "none";
+      } catch(e) {
         alert("Delete failed: " + e.message);
       }
     }
