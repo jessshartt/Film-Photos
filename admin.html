@@ -313,18 +313,26 @@
       album.photos.forEach(photoPath => {
         const wrap = document.createElement("div");
         wrap.className = "manage-thumb";
+        if ((album.cover || album.photos[0]) === photoPath) wrap.classList.add("is-cover");
         wrap.dataset.path = photoPath;
 
         const img = document.createElement("img");
         img.src = photoPath;
 
-        const btn = document.createElement("button");
-        btn.className = "manage-delete";
-        btn.textContent = "✕";
-        btn.onclick = () => confirmDelete(albumId, photoPath, wrap);
+        const delBtn = document.createElement("button");
+        delBtn.className = "manage-delete";
+        delBtn.textContent = "✕";
+        delBtn.onclick = () => confirmDelete(albumId, photoPath, wrap);
+
+        const coverBtn = document.createElement("button");
+        coverBtn.className = "manage-cover";
+        coverBtn.textContent = "★";
+        coverBtn.title = "Set as cover";
+        coverBtn.onclick = () => setCover(albumId, photoPath);
 
         wrap.appendChild(img);
-        wrap.appendChild(btn);
+        wrap.appendChild(delBtn);
+        wrap.appendChild(coverBtn);
         grid.appendChild(wrap);
       });
     }
@@ -332,6 +340,23 @@
     function confirmDelete(albumId, photoPath, el) {
       if (!confirm(`Delete this photo? This cannot be undone.`)) return;
       deletePhoto(albumId, photoPath, el);
+    }
+
+    async function setCover(albumId, photoPath) {
+      try {
+        const albumsFile = await apiGet("albums.json");
+        const albumsData = JSON.parse(atob(albumsFile.content.replace(/\n/g, "")));
+        const album = albumsData.find(a => a.id === albumId);
+        if (album) album.cover = photoPath;
+        const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(albumsData, null, 2))));
+        await apiPut("albums.json", newContent, `Set cover for ${albumId}`, albumsFile.sha);
+        document.querySelectorAll(".manage-thumb").forEach(t => t.classList.remove("is-cover"));
+        document.querySelectorAll(".manage-thumb").forEach(t => {
+          if (t.dataset.path === photoPath) t.classList.add("is-cover");
+        });
+      } catch(e) {
+        alert("Failed to set cover: " + e.message);
+      }
     }
 
     async function apiDelete(path, sha, message) {
@@ -363,8 +388,13 @@
         await apiDelete(photoPath, fileData.sha, `Remove ${photoPath}`);
 
         const albumsData = JSON.parse(atob(albumsFile.content.replace(/\n/g, "")));
-        const album = albumsData.find(a => a.id === albumId);
-        if (album) album.photos = album.photos.filter(p => p !== photoPath);
+        const albumIdx = albumsData.findIndex(a => a.id === albumId);
+        if (albumIdx !== -1) {
+          const album = albumsData[albumIdx];
+          album.photos = album.photos.filter(p => p !== photoPath);
+          if (album.cover === photoPath) delete album.cover;
+          if (album.photos.length === 0) albumsData.splice(albumIdx, 1);
+        }
 
         const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(albumsData, null, 2))));
         await apiPut("albums.json", newContent, `Remove photo from ${albumId}`, albumsFile.sha);

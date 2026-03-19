@@ -61,7 +61,7 @@
       const albums = await res.json();
       const grid = document.getElementById("album-grid");
       albums.forEach(album => {
-        const cover = album.photos[0] || "";
+        const cover = album.cover || album.photos[0] || "";
         const card = document.createElement("a");
         card.href = `album.html?id=${album.id}`;
         card.className = "album-card";

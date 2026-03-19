@@ -531,6 +531,26 @@ body.scrapbook-bg {
 
 .manage-delete:hover { background: #e55; }
 
+.manage-cover {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.5);
+  border: none;
+  color: #ccc;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.manage-cover:hover { background: #c8911a; color: #fff; }
+.manage-thumb.is-cover .manage-cover { background: #c8911a; color: #fff; }
+
 /* ── Mobile ── */
 @media (max-width: 600px) {
   .album-grid {
