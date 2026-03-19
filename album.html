@@ -43,7 +43,6 @@
     let photos = [];
     let currentIndex = 0;
     let currentView = "grid";
-    let currentTheme = "default";
 
     async function init() {
       const res = await fetch("albums.json");
@@ -54,7 +53,6 @@
       document.title = album.name;
       document.getElementById("album-title").textContent = album.name;
       photos = album.photos;
-      currentTheme = getTheme(album.id, album.name);
 
       document.getElementById("page").style.display = "block";
       renderPhotos();
