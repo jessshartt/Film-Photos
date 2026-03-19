@@ -50,6 +50,16 @@
 
     <p id="upload-error" style="color:#e55;display:none;"></p>
     <p id="upload-success" style="color:#5e5;display:none;"></p>
+
+    <!-- Manage Photos -->
+    <div class="admin-card">
+      <h2>Manage Photos</h2>
+      <select id="manage-album-select" onchange="loadManageAlbum()">
+        <option value="">Select album to manage</option>
+      </select>
+      <div id="manage-grid" class="manage-grid"></div>
+      <p id="manage-msg" style="font-family:sans-serif;font-size:0.85rem;color:#aaa;display:none;"></p>
+    </div>
   </div>
 
   <script>
@@ -110,6 +120,7 @@
     }
 
     loadAlbumSelect();
+    loadManageSelect();
 
     function onAlbumChange() {
       const val = document.getElementById("album-select").value;
@@ -266,6 +277,104 @@
       const el = document.getElementById("upload-success");
       el.textContent = msg;
       el.style.display = "block";
+    }
+
+    // ── Manage / Delete ──
+    async function loadManageSelect() {
+      const res = await fetch("albums.json?t=" + Date.now());
+      const albums = await res.json();
+      const sel = document.getElementById("manage-album-select");
+      sel.innerHTML = '<option value="">Select album to manage</option>';
+      albums.forEach(a => {
+        const opt = document.createElement("option");
+        opt.value = a.id;
+        opt.textContent = a.name;
+        sel.appendChild(opt);
+      });
+    }
+
+    async function loadManageAlbum() {
+      const albumId = document.getElementById("manage-album-select").value;
+      const grid = document.getElementById("manage-grid");
+      const msg = document.getElementById("manage-msg");
+      grid.innerHTML = "";
+      msg.style.display = "none";
+      if (!albumId) return;
+
+      const res = await fetch("albums.json?t=" + Date.now());
+      const albums = await res.json();
+      const album = albums.find(a => a.id === albumId);
+      if (!album || !album.photos.length) {
+        msg.textContent = "No photos in this album.";
+        msg.style.display = "block";
+        return;
+      }
+
+      album.photos.forEach(photoPath => {
+        const wrap = document.createElement("div");
+        wrap.className = "manage-thumb";
+        wrap.dataset.path = photoPath;
+
+        const img = document.createElement("img");
+        img.src = photoPath;
+
+        const btn = document.createElement("button");
+        btn.className = "manage-delete";
+        btn.textContent = "✕";
+        btn.onclick = () => confirmDelete(albumId, photoPath, wrap);
+
+        wrap.appendChild(img);
+        wrap.appendChild(btn);
+        grid.appendChild(wrap);
+      });
+    }
+
+    function confirmDelete(albumId, photoPath, el) {
+      if (!confirm(`Delete this photo? This cannot be undone.`)) return;
+      deletePhoto(albumId, photoPath, el);
+    }
+
+    async function apiDelete(path, sha, message) {
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `token ${getToken()}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message, sha, branch: BRANCH })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || `DELETE ${path} failed`);
+      }
+      return res.json();
+    }
+
+    async function deletePhoto(albumId, photoPath, el) {
+      try {
+        el.style.opacity = "0.4";
+        el.style.pointerEvents = "none";
+
+        const [fileData, albumsFile] = await Promise.all([
+          apiGet(photoPath),
+          apiGet("albums.json")
+        ]);
+
+        await apiDelete(photoPath, fileData.sha, `Remove ${photoPath}`);
+
+        const albumsData = JSON.parse(atob(albumsFile.content.replace(/\n/g, "")));
+        const album = albumsData.find(a => a.id === albumId);
+        if (album) album.photos = album.photos.filter(p => p !== photoPath);
+
+        const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(albumsData, null, 2))));
+        await apiPut("albums.json", newContent, `Remove photo from ${albumId}`, albumsFile.sha);
+
+        el.remove();
+      } catch(e) {
+        el.style.opacity = "1";
+        el.style.pointerEvents = "auto";
+        alert("Delete failed: " + e.message);
+      }
     }
   </script>
 
