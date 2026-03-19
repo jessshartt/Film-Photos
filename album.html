@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Album</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div id="page" style="display:none;">
+    <header>
+      <a href="index.html" class="back">← Back</a>
+      <h1 id="album-title"></h1>
+      <nav><a href="favorites.html">Favorites</a></nav>
+    </header>
+    <div class="grid" id="photo-grid"></div>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="lightbox" style="display:none;">
+    <button class="lb-close" onclick="closeLightbox()">✕</button>
+    <button class="lb-prev" onclick="changePhoto(-1)">‹</button>
+    <div class="lb-img-wrap">
+      <img id="lb-img" src="" alt="" />
+      <button class="lb-heart" id="lb-heart" onclick="toggleFavorite()">♡</button>
+    </div>
+    <button class="lb-next" onclick="changePhoto(1)">›</button>
+  </div>
+
+  <script>
+    if (localStorage.getItem("film_auth") !== "true") {
+      window.location.href = "index.html";
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const albumId = params.get("id");
+    let photos = [];
+    let currentIndex = 0;
+
+    async function init() {
+      const res = await fetch("albums.json");
+      const albums = await res.json();
+      const album = albums.find(a => a.id === albumId);
+      if (!album) return;
+
+      document.title = album.name;
+      document.getElementById("album-title").textContent = album.name;
+      photos = album.photos;
+
+      const grid = document.getElementById("photo-grid");
+      photos.forEach((src, i) => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = "";
+        img.loading = "lazy";
+        img.onclick = () => openLightbox(i);
+        grid.appendChild(img);
+      });
+
+      document.getElementById("page").style.display = "block";
+    }
+
+    init();
+
+    // Lightbox
+    function openLightbox(index) {
+      currentIndex = index;
+      document.getElementById("lb-img").src = photos[currentIndex];
+      updateHeart();
+      document.getElementById("lightbox").style.display = "flex";
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeLightbox() {
+      document.getElementById("lightbox").style.display = "none";
+      document.body.style.overflow = "";
+    }
+
+    function changePhoto(dir) {
+      currentIndex = (currentIndex + dir + photos.length) % photos.length;
+      document.getElementById("lb-img").src = photos[currentIndex];
+      updateHeart();
+    }
+
+    // Keyboard navigation
+    document.addEventListener("keydown", function(e) {
+      if (document.getElementById("lightbox").style.display === "none") return;
+      if (e.key === "ArrowRight") changePhoto(1);
+      if (e.key === "ArrowLeft") changePhoto(-1);
+      if (e.key === "Escape") closeLightbox();
+    });
+
+    // Favorites
+    function getFavorites() {
+      return JSON.parse(localStorage.getItem("film_favorites") || "[]");
+    }
+
+    function toggleFavorite() {
+      const src = photos[currentIndex];
+      const favs = getFavorites();
+      const idx = favs.indexOf(src);
+      if (idx === -1) favs.push(src);
+      else favs.splice(idx, 1);
+      localStorage.setItem("film_favorites", JSON.stringify(favs));
+      updateHeart();
+    }
+
+    function updateHeart() {
+      const src = photos[currentIndex];
+      const favs = getFavorites();
+      document.getElementById("lb-heart").textContent = favs.includes(src) ? "♥" : "♡";
+    }
+  </script>
+
+</body>
+</html>

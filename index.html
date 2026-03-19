@@ -18,39 +18,35 @@
     </div>
   </div>
 
-  <!-- Gallery -->
-  <div id="gallery" style="display:none;">
+  <!-- Homepage -->
+  <div id="home" style="display:none;">
     <header>
       <h1>Film Photos</h1>
+      <nav>
+        <a href="favorites.html">Favorites</a>
+      </nav>
     </header>
-    <div class="grid" id="photo-grid">
-      <!-- Photos are loaded here automatically -->
-    </div>
+    <div class="album-grid" id="album-grid"></div>
   </div>
 
   <script>
     const PASSWORD = "film";
 
-    const PHOTOS = [
-      "photos/Image from iOS (14).jpg",
-    ];
-
-    function showGallery() {
+    function showHome() {
       document.getElementById("gate").style.display = "none";
-      document.getElementById("gallery").style.display = "block";
-      loadPhotos();
+      document.getElementById("home").style.display = "block";
+      loadAlbums();
     }
 
-    // Skip password if already authenticated
     if (localStorage.getItem("film_auth") === "true") {
-      showGallery();
+      showHome();
     }
 
     function checkPassword() {
       const input = document.getElementById("password-input").value;
       if (input === PASSWORD) {
         localStorage.setItem("film_auth", "true");
-        showGallery();
+        showHome();
       } else {
         document.getElementById("error-msg").style.display = "block";
       }
@@ -60,14 +56,23 @@
       if (e.key === "Enter") checkPassword();
     });
 
-    function loadPhotos() {
-      const grid = document.getElementById("photo-grid");
-      PHOTOS.forEach(src => {
-        const img = document.createElement("img");
-        img.src = src;
-        img.alt = "";
-        img.loading = "lazy";
-        grid.appendChild(img);
+    async function loadAlbums() {
+      const res = await fetch("albums.json");
+      const albums = await res.json();
+      const grid = document.getElementById("album-grid");
+      albums.forEach(album => {
+        const cover = album.photos[0] || "";
+        const card = document.createElement("a");
+        card.href = `album.html?id=${album.id}`;
+        card.className = "album-card";
+        card.innerHTML = `
+          <div class="album-cover" style="background-image:url('${cover}')"></div>
+          <div class="album-info">
+            <span class="album-name">${album.name}</span>
+            <span class="album-count">${album.photos.length} photos</span>
+          </div>
+        `;
+        grid.appendChild(card);
       });
     }
   </script>

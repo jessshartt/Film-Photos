@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Photos</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="admin-wrap">
+    <h1>Upload Photos</h1>
+
+    <!-- Token Setup -->
+    <div id="token-section">
+      <div class="admin-card" id="token-card">
+        <h2>GitHub Token</h2>
+        <p id="token-status">No token saved.</p>
+        <input type="password" id="token-input" placeholder="Paste your GitHub token" />
+        <button onclick="saveToken()">Save Token</button>
+      </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="admin-card">
+      <h2>Album</h2>
+      <div class="admin-row">
+        <select id="album-select" onchange="onAlbumChange()">
+          <option value="">Loading albums...</option>
+          <option value="__new__">+ New album</option>
+        </select>
+      </div>
+      <div id="new-album-fields" style="display:none;">
+        <input type="text" id="album-name" placeholder="Album name (e.g. Italy 2024)" />
+        <input type="text" id="album-date" placeholder="Date (e.g. 2024-06)" />
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Photos</h2>
+      <input type="file" id="file-input" accept="image/*" multiple />
+      <div id="preview-grid" class="preview-grid"></div>
+      <button id="upload-btn" onclick="uploadPhotos()">Upload</button>
+    </div>
+
+    <div id="progress-wrap" style="display:none;">
+      <div class="progress-bar"><div id="progress-fill"></div></div>
+      <p id="progress-label">Uploading...</p>
+    </div>
+
+    <p id="upload-error" style="color:#e55;display:none;"></p>
+    <p id="upload-success" style="color:#5e5;display:none;"></p>
+  </div>
+
+  <script>
+    const REPO_OWNER = "jessshartt";
+    const REPO_NAME = "Film-Photos";
+    const BRANCH = "main";
+
+    // Token management
+    function getToken() {
+      return localStorage.getItem("film_github_token") || "";
+    }
+
+    function saveToken() {
+      const t = document.getElementById("token-input").value.trim();
+      if (t) {
+        localStorage.setItem("film_github_token", t);
+        document.getElementById("token-input").value = "";
+        updateTokenStatus();
+      }
+    }
+
+    function updateTokenStatus() {
+      const t = getToken();
+      const status = document.getElementById("token-status");
+      const input = document.getElementById("token-input");
+      const btn = document.querySelector("#token-card button");
+      if (t) {
+        status.textContent = "Token saved.";
+        status.style.color = "#5e5";
+        input.style.display = "none";
+        btn.textContent = "Change Token";
+        btn.onclick = () => {
+          input.style.display = "block";
+          btn.textContent = "Save Token";
+          btn.onclick = saveToken;
+        };
+      }
+    }
+
+    updateTokenStatus();
+
+    // Load albums into select
+    async function loadAlbumSelect() {
+      const res = await fetch("albums.json?t=" + Date.now());
+      const albums = await res.json();
+      const sel = document.getElementById("album-select");
+      sel.innerHTML = '<option value="">Select album</option>';
+      albums.forEach(a => {
+        const opt = document.createElement("option");
+        opt.value = a.id;
+        opt.textContent = a.name;
+        sel.appendChild(opt);
+      });
+      const newOpt = document.createElement("option");
+      newOpt.value = "__new__";
+      newOpt.textContent = "+ New album";
+      sel.appendChild(newOpt);
+    }
+
+    loadAlbumSelect();
+
+    function onAlbumChange() {
+      const val = document.getElementById("album-select").value;
+      document.getElementById("new-album-fields").style.display = val === "__new__" ? "flex" : "none";
+    }
+
+    // File preview
+    document.getElementById("file-input").addEventListener("change", function() {
+      const grid = document.getElementById("preview-grid");
+      grid.innerHTML = "";
+      Array.from(this.files).forEach(file => {
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        grid.appendChild(img);
+      });
+    });
+
+    // GitHub API helpers
+    async function apiGet(path) {
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+        headers: { Authorization: `token ${getToken()}` }
+      });
+      if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+      return res.json();
+    }
+
+    async function apiPut(path, content, message, sha) {
+      const body = { message, content, branch: BRANCH };
+      if (sha) body.sha = sha;
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `token ${getToken()}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || `PUT ${path} failed`);
+      }
+      return res.json();
+    }
+
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function uploadPhotos() {
+      const token = getToken();
+      if (!token) {
+        showError("Please save your GitHub token first.");
+        return;
+      }
+
+      const files = document.getElementById("file-input").files;
+      if (!files.length) {
+        showError("Please select photos to upload.");
+        return;
+      }
+
+      let albumId = document.getElementById("album-select").value;
+      let albumName = "";
+      let albumDate = "";
+      let isNew = albumId === "__new__";
+
+      if (!albumId || albumId === "__new__") {
+        albumName = document.getElementById("album-name").value.trim();
+        albumDate = document.getElementById("album-date").value.trim();
+        if (!albumName) { showError("Please enter an album name."); return; }
+        albumId = albumName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+      }
+
+      // Fetch current albums.json
+      let albumsData, albumsSha;
+      try {
+        const albumsFile = await apiGet("albums.json");
+        albumsSha = albumsFile.sha;
+        albumsData = JSON.parse(atob(albumsFile.content.replace(/\n/g, "")));
+      } catch(e) {
+        showError("Could not load albums.json: " + e.message);
+        return;
+      }
+
+      let album = albumsData.find(a => a.id === albumId);
+      if (!album) {
+        album = { id: albumId, name: albumName, date: albumDate, photos: [] };
+        albumsData.push(album);
+      }
+
+      // Upload photos
+      showProgress(true);
+      const total = files.length;
+      let uploaded = 0;
+
+      for (const file of files) {
+        setProgress(uploaded / total, `Uploading ${file.name}...`);
+        const base64 = await toBase64(file);
+        const filePath = `photos/${albumId}/${file.name}`;
+        const photoPath = filePath;
+
+        // Check if file already exists (to get SHA for update)
+        let existingSha;
+        try {
+          const existing = await apiGet(filePath);
+          existingSha = existing.sha;
+        } catch(e) { /* file doesn't exist yet, that's fine */ }
+
+        await apiPut(filePath, base64, `Add ${file.name} to ${albumId}`, existingSha);
+
+        if (!album.photos.includes(photoPath)) {
+          album.photos.push(photoPath);
+        }
+        uploaded++;
+      }
+
+      // Update albums.json
+      setProgress(0.95, "Updating album list...");
+      const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(albumsData, null, 2))));
+      await apiPut("albums.json", newContent, `Update albums.json for ${albumId}`, albumsSha);
+
+      setProgress(1, "Done!");
+      showSuccess(`${total} photo${total > 1 ? "s" : ""} uploaded to "${album.name}".`);
+      document.getElementById("file-input").value = "";
+      document.getElementById("preview-grid").innerHTML = "";
+      loadAlbumSelect();
+    }
+
+    function showProgress(show) {
+      document.getElementById("progress-wrap").style.display = show ? "block" : "none";
+      document.getElementById("upload-error").style.display = "none";
+      document.getElementById("upload-success").style.display = "none";
+    }
+
+    function setProgress(pct, label) {
+      document.getElementById("progress-fill").style.width = (pct * 100) + "%";
+      document.getElementById("progress-label").textContent = label;
+    }
+
+    function showError(msg) {
+      showProgress(false);
+      const el = document.getElementById("upload-error");
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+
+    function showSuccess(msg) {
+      showProgress(false);
+      const el = document.getElementById("upload-success");
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+  </script>
+
+</body>
+</html>
