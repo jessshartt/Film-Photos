@@ -10,7 +10,7 @@
 
   <div id="page" style="display:none;">
     <header id="album-header">
-      <a href="index.html" class="back">← Back</a>
+      <a href="index.html" class="back">←</a>
       <h1 id="album-title"></h1>
       <nav>
         <button class="view-toggle active" id="btn-grid" onclick="setView('grid')">Grid</button>
@@ -138,16 +138,18 @@
       bookPage = 0;
 
       container.innerHTML = `
-        <div class="book-slider" id="book-slider"></div>
-        <button class="book-prev" onclick="bookNav(-1)">‹</button>
-        <button class="book-next" onclick="bookNav(1)">›</button>
-        <div class="book-counter" id="book-counter">1 / ${bookPageCount}</div>
+        <div class="book-container" id="book-container"></div>
+        <div class="book-nav-row">
+          <button class="book-prev" onclick="bookNav(-1)">‹</button>
+          <div class="book-counter" id="book-counter">1 / ${bookPageCount}</div>
+          <button class="book-next" onclick="bookNav(1)">›</button>
+        </div>
       `;
 
-      const slider = document.getElementById("book-slider");
-      pages.forEach(page => {
+      const bookContainer = document.getElementById("book-container");
+      pages.forEach((page, pageIdx) => {
         const pageEl = document.createElement("div");
-        pageEl.className = `book-page ${page.cls}`;
+        pageEl.className = `book-page ${page.cls}${pageIdx === 0 ? " active" : ""}`;
         page.photos.forEach((src, j) => {
           const img = document.createElement("img");
           img.src = src;
@@ -156,24 +158,51 @@
           img.onclick = () => openLightbox(page.startIdx + j);
           pageEl.appendChild(img);
         });
-        slider.appendChild(pageEl);
+        bookContainer.appendChild(pageEl);
       });
 
       // Swipe support
       let touchStartX = 0;
-      slider.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
-      slider.addEventListener("touchend", e => {
+      bookContainer.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+      bookContainer.addEventListener("touchend", e => {
         const diff = touchStartX - e.changedTouches[0].clientX;
         if (Math.abs(diff) > 50) bookNav(diff > 0 ? 1 : -1);
       });
     }
 
     function bookNav(dir) {
-      const slider = document.getElementById("book-slider");
-      if (!slider) return;
-      bookPage = Math.max(0, Math.min(bookPage + dir, bookPageCount - 1));
-      slider.scrollTo({ left: bookPage * slider.clientWidth, behavior: "smooth" });
-      document.getElementById("book-counter").textContent = `${bookPage + 1} / ${bookPageCount}`;
+      const container = document.getElementById("book-container");
+      if (!container) return;
+      const nextIdx = Math.max(0, Math.min(bookPage + dir, bookPageCount - 1));
+      if (nextIdx === bookPage) return;
+
+      const pages = container.querySelectorAll(".book-page");
+      const current = pages[bookPage];
+      const next = pages[nextIdx];
+      const dur = 380;
+
+      if (dir > 0) {
+        current.style.transformOrigin = "left center";
+        next.style.transformOrigin = "right center";
+        current.style.animation = `flipOutLeft ${dur}ms ease forwards`;
+        next.style.animation = `flipInRight ${dur}ms ease forwards`;
+      } else {
+        current.style.transformOrigin = "right center";
+        next.style.transformOrigin = "left center";
+        current.style.animation = `flipOutRight ${dur}ms ease forwards`;
+        next.style.animation = `flipInLeft ${dur}ms ease forwards`;
+      }
+      next.classList.add("active");
+
+      setTimeout(() => {
+        current.classList.remove("active");
+        current.style.animation = "";
+        current.style.transformOrigin = "";
+        next.style.animation = "";
+        next.style.transformOrigin = "";
+        bookPage = nextIdx;
+        document.getElementById("book-counter").textContent = `${bookPage + 1} / ${bookPageCount}`;
+      }, dur);
     }
 
     // ── Lightbox ──
