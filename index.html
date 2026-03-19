@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Film Photos</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Password Gate -->
+  <div id="gate">
+    <div class="gate-box">
+      <h1>Film Photos</h1>
+      <input type="password" id="password-input" placeholder="Enter password" />
+      <button onclick="checkPassword()">Enter</button>
+      <p id="error-msg" style="display:none;">Wrong password, try again.</p>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <div id="gallery" style="display:none;">
+    <header>
+      <h1>Film Photos</h1>
+    </header>
+    <div class="grid" id="photo-grid">
+      <!-- Photos are loaded here automatically -->
+    </div>
+  </div>
+
+  <script>
+    const PASSWORD = "family2024"; // Change this to your own password
+
+    const PHOTOS = [
+      // Add photo filenames here as you upload them, e.g.:
+      // "photos/photo1.jpg",
+      // "photos/photo2.jpg",
+    ];
+
+    function checkPassword() {
+      const input = document.getElementById("password-input").value;
+      if (input === PASSWORD) {
+        document.getElementById("gate").style.display = "none";
+        document.getElementById("gallery").style.display = "block";
+        loadPhotos();
+      } else {
+        document.getElementById("error-msg").style.display = "block";
+      }
+    }
+
+    document.getElementById("password-input").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") checkPassword();
+    });
+
+    function loadPhotos() {
+      const grid = document.getElementById("photo-grid");
+      PHOTOS.forEach(src => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = "";
+        img.loading = "lazy";
+        grid.appendChild(img);
+      });
+    }
+  </script>
+
+</body>
+</html>

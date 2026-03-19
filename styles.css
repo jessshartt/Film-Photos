@@ -1,0 +1,103 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #111;
+  color: #eee;
+  font-family: Georgia, serif;
+  min-height: 100vh;
+}
+
+/* Password Gate */
+#gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.gate-box {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 300px;
+}
+
+.gate-box h1 {
+  font-size: 2rem;
+  letter-spacing: 0.1em;
+  font-weight: normal;
+}
+
+.gate-box input {
+  padding: 10px 14px;
+  font-size: 1rem;
+  background: #222;
+  border: 1px solid #444;
+  color: #eee;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.gate-box button {
+  padding: 10px;
+  font-size: 1rem;
+  background: #eee;
+  color: #111;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.gate-box button:hover {
+  background: #ccc;
+}
+
+#error-msg {
+  color: #e55;
+  font-size: 0.9rem;
+}
+
+/* Gallery */
+header {
+  padding: 40px 20px 20px;
+  text-align: center;
+}
+
+header h1 {
+  font-size: 2rem;
+  letter-spacing: 0.1em;
+  font-weight: normal;
+}
+
+.grid {
+  columns: 3;
+  column-gap: 8px;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.grid img {
+  width: 100%;
+  display: block;
+  margin-bottom: 8px;
+  border-radius: 2px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .grid {
+    columns: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    columns: 1;
+  }
+}
