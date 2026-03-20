@@ -147,8 +147,6 @@ header .back:hover { color: #eee; }
 
 .grid img {
   width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
   display: block;
   cursor: pointer;
   transition: opacity 0.2s;
