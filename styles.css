@@ -139,7 +139,9 @@ header .back:hover { color: #eee; }
 
 /* ── Photo Grid (album view) ── */
 .grid {
-  columns: 3;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 1px;
   column-gap: 4px;
   padding: 4px;
 }
@@ -149,8 +151,7 @@ header .back:hover { color: #eee; }
   display: block;
   cursor: pointer;
   transition: opacity 0.2s;
-  margin-bottom: 4px;
-  break-inside: avoid;
+  align-self: start;
 }
 
 .grid img:hover { opacity: 0.85; }
@@ -617,7 +618,7 @@ body.scrapbook-bg {
   }
 
   .grid {
-    columns: 2;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .book-container {

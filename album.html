@@ -60,6 +60,16 @@
 
     init();
 
+    // ── Masonry grid fit ──
+    function masonryFit(img) {
+      const rowH = 1, gap = 4;
+      const span = Math.ceil((img.getBoundingClientRect().height + gap) / (rowH + gap));
+      img.style.gridRowEnd = "span " + span;
+    }
+    window.addEventListener("resize", () => {
+      document.querySelectorAll(".grid img").forEach(masonryFit);
+    });
+
     // ── View toggle ──
     function setView(mode) {
       currentView = mode;
@@ -82,6 +92,8 @@
           img.alt = "";
           img.loading = "lazy";
           img.onclick = () => openLightbox(i);
+          img.addEventListener("load", () => masonryFit(img));
+          if (img.complete) masonryFit(img);
           container.appendChild(img);
         });
       } else {
