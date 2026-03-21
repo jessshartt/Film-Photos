@@ -165,7 +165,7 @@ header .back:hover { color: #eee; }
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   padding: 4px;
-  align-items: start;
+  grid-auto-rows: 4px;
 }
 
 .grid img {

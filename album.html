@@ -121,6 +121,7 @@
           img.alt = "";
           img.loading = "lazy";
           img.onclick = () => openLightbox(i);
+          img.addEventListener("load", () => masonryFit(img));
           container.appendChild(img);
         });
       } else {
@@ -130,6 +131,20 @@
         renderScrapbook(container);
       }
     }
+
+    // ── Masonry ──
+    function masonryFit(img) {
+      const rowH = 4, gap = 4;
+      if (!img.naturalWidth) return;
+      const h = img.offsetWidth * img.naturalHeight / img.naturalWidth;
+      img.style.gridRowEnd = `span ${Math.ceil((h + gap) / (rowH + gap))}`;
+    }
+
+    window.addEventListener("resize", () => {
+      document.querySelectorAll("#photo-grid.grid img").forEach(img => {
+        if (img.complete && img.naturalWidth) masonryFit(img);
+      });
+    });
 
     // ── Comments ──
     let currentCommentSrc = null;
