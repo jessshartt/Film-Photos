@@ -33,7 +33,38 @@
     <button class="lb-next" onclick="changePhoto(1)">›</button>
   </div>
 
+  <!-- Comment Drawer -->
+  <div id="comment-overlay" onclick="closeCommentDrawer()"></div>
+  <div id="comment-drawer">
+    <div class="comment-drawer-header">
+      <img id="comment-thumb" src="" alt="" />
+      <button class="comment-drawer-close" onclick="closeCommentDrawer()">✕</button>
+    </div>
+    <div id="comment-list"></div>
+    <div class="comment-input-area">
+      <input id="comment-name" type="text" placeholder="Your name" maxlength="40" autocomplete="nickname" />
+      <div class="comment-input-row">
+        <input id="comment-text" type="text" placeholder="Add a comment…" maxlength="300" />
+        <button id="comment-post-btn" onclick="submitComment()">Post</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
   <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyAWr43DkBdHJyRzoepsO6Egd5Lw-uKM8Mc",
+      authDomain: "film-photos.firebaseapp.com",
+      projectId: "film-photos",
+      storageBucket: "film-photos.firebasestorage.app",
+      messagingSenderId: "72700167062",
+      appId: "1:72700167062:web:bfb560f907c6e26b9c13b7"
+    });
+    const db = firebase.firestore();
+
     if (localStorage.getItem("film_auth") !== "true") {
       window.location.href = "index.html";
     }
@@ -49,27 +80,37 @@
       const albums = await res.json();
       const album = albums.find(a => a.id === albumId);
       if (!album) return;
-
       document.title = album.name;
       document.getElementById("album-title").textContent = album.name;
       photos = album.photos;
-
       document.getElementById("page").style.display = "block";
       renderPhotos();
     }
 
     init();
 
-    // ── Masonry grid fit ──
-    function masonryFit(img) {
-      if (!img.naturalWidth) return;
-      const colWidth = img.offsetWidth;
-      const displayedHeight = (img.naturalHeight / img.naturalWidth) * colWidth;
-      const span = Math.ceil((displayedHeight + 4) / 5);
-      img.style.gridRowEnd = "span " + span;
+    // ── Masonry ──
+    function getColWidth() {
+      const grid = document.querySelector(".grid");
+      if (!grid) return 0;
+      const cols = window.innerWidth <= 600 ? 2 : 3;
+      return (grid.clientWidth - 8 - (cols - 1) * 4) / cols;
     }
+
+    function masonryFit(item, img) {
+      if (!img.naturalWidth) return;
+      const colWidth = getColWidth();
+      if (!colWidth) return;
+      const imgH = (img.naturalHeight / img.naturalWidth) * colWidth;
+      const totalH = imgH + 32;
+      item.style.gridRowEnd = "span " + Math.ceil((totalH + 4) / 5);
+    }
+
     window.addEventListener("resize", () => {
-      document.querySelectorAll(".grid img").forEach(masonryFit);
+      document.querySelectorAll(".grid-item").forEach(item => {
+        const img = item.querySelector("img");
+        if (img && img.naturalWidth) masonryFit(item, img);
+      });
     });
 
     // ── View toggle ──
@@ -89,14 +130,30 @@
         document.body.classList.remove("scrapbook-bg");
         document.getElementById("album-header").classList.remove("light");
         photos.forEach((src, i) => {
+          const item = document.createElement("div");
+          item.className = "grid-item";
+
           const img = document.createElement("img");
           img.src = src;
           img.alt = "";
           img.loading = "eager";
           img.onclick = () => openLightbox(i);
-          img.addEventListener("load", () => masonryFit(img));
-          if (img.complete) masonryFit(img);
-          container.appendChild(img);
+
+          const btn = document.createElement("button");
+          btn.className = "comment-btn";
+          btn.textContent = "💬";
+          btn.dataset.src = src;
+          btn.onclick = (e) => { e.stopPropagation(); openCommentDrawer(src); };
+
+          item.appendChild(img);
+          item.appendChild(btn);
+          container.appendChild(item);
+
+          if (img.complete && img.naturalWidth) {
+            requestAnimationFrame(() => masonryFit(item, img));
+          } else {
+            img.addEventListener("load", () => masonryFit(item, img));
+          }
         });
       } else {
         container.className = "scrapbook";
@@ -106,11 +163,97 @@
       }
     }
 
-    // ── Scrapbook / Book view ──
+    // ── Comments ──
+    let currentCommentSrc = null;
+    let commentUnsubscribe = null;
+
+    function openCommentDrawer(src) {
+      currentCommentSrc = src;
+      document.getElementById("comment-thumb").src = src;
+      document.getElementById("comment-list").innerHTML = "<p class='comment-loading'>Loading…</p>";
+      document.getElementById("comment-overlay").classList.add("active");
+      document.getElementById("comment-drawer").classList.add("active");
+      document.body.style.overflow = "hidden";
+
+      const savedName = localStorage.getItem("film_commenter_name") || "";
+      document.getElementById("comment-name").value = savedName;
+
+      if (commentUnsubscribe) commentUnsubscribe();
+      commentUnsubscribe = db.collection("comments")
+        .where("photoPath", "==", src)
+        .orderBy("ts", "asc")
+        .onSnapshot(snap => {
+          const list = document.getElementById("comment-list");
+          if (snap.empty) {
+            list.innerHTML = "<p class='comment-empty'>No comments yet — be the first!</p>";
+          } else {
+            list.innerHTML = snap.docs.map(doc => {
+              const d = doc.data();
+              const time = d.ts
+                ? new Date(d.ts.toDate()).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                : "";
+              return `<div class="comment-item">
+                <div class="comment-meta">
+                  <span class="comment-author">${escapeHtml(d.name)}</span>
+                  <span class="comment-time">${time}</span>
+                </div>
+                <p class="comment-text">${escapeHtml(d.text)}</p>
+              </div>`;
+            }).join("");
+            list.scrollTop = list.scrollHeight;
+          }
+        });
+    }
+
+    function closeCommentDrawer() {
+      document.getElementById("comment-overlay").classList.remove("active");
+      document.getElementById("comment-drawer").classList.remove("active");
+      document.body.style.overflow = "";
+      if (commentUnsubscribe) { commentUnsubscribe(); commentUnsubscribe = null; }
+      currentCommentSrc = null;
+    }
+
+    async function submitComment() {
+      const nameEl = document.getElementById("comment-name");
+      const textEl = document.getElementById("comment-text");
+      const name = nameEl.value.trim();
+      const text = textEl.value.trim();
+      if (!name || !text || !currentCommentSrc) return;
+
+      localStorage.setItem("film_commenter_name", name);
+
+      const btn = document.getElementById("comment-post-btn");
+      btn.disabled = true;
+      btn.textContent = "Posting…";
+
+      try {
+        await db.collection("comments").add({
+          photoPath: currentCommentSrc,
+          name,
+          text,
+          ts: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        textEl.value = "";
+      } catch (e) {
+        alert("Couldn't post comment. Try again.");
+      }
+
+      btn.disabled = false;
+      btn.textContent = "Post";
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // ── Scrapbook ──
     let bookPage = 0;
     let bookPageCount = 0;
 
-    // Cycle of page layouts: each defines how many photos and which CSS class
     const CYCLE_LAYOUTS = [
       { count: 4, cls: "l-2x2" },
       { count: 3, cls: "l-hero-right" },
@@ -148,7 +291,6 @@
       const pages = buildPages();
       bookPageCount = pages.length;
       bookPage = 0;
-
       container.innerHTML = `
         <div class="book-container" id="book-container"></div>
         <div class="book-nav-row">
@@ -157,23 +299,18 @@
           <button class="book-next" onclick="bookNav(1)">›</button>
         </div>
       `;
-
       const bookContainer = document.getElementById("book-container");
       pages.forEach((page, pageIdx) => {
         const pageEl = document.createElement("div");
         pageEl.className = `book-page ${page.cls}${pageIdx === 0 ? " active" : ""}`;
         page.photos.forEach((src, j) => {
           const img = document.createElement("img");
-          img.src = src;
-          img.alt = "";
-          img.loading = "lazy";
+          img.src = src; img.alt = ""; img.loading = "lazy";
           img.onclick = () => openLightbox(page.startIdx + j);
           pageEl.appendChild(img);
         });
         bookContainer.appendChild(pageEl);
       });
-
-      // Swipe support
       let touchStartX = 0;
       bookContainer.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
       bookContainer.addEventListener("touchend", e => {
@@ -187,12 +324,10 @@
       if (!container) return;
       const nextIdx = Math.max(0, Math.min(bookPage + dir, bookPageCount - 1));
       if (nextIdx === bookPage) return;
-
       const pages = container.querySelectorAll(".book-page");
       const current = pages[bookPage];
       const next = pages[nextIdx];
       const dur = 380;
-
       if (dir > 0) {
         current.style.transformOrigin = "left center";
         next.style.transformOrigin = "right center";
@@ -205,13 +340,10 @@
         next.style.animation = `flipInLeft ${dur}ms ease forwards`;
       }
       next.classList.add("active");
-
       setTimeout(() => {
         current.classList.remove("active");
-        current.style.animation = "";
-        current.style.transformOrigin = "";
-        next.style.animation = "";
-        next.style.transformOrigin = "";
+        current.style.animation = ""; current.style.transformOrigin = "";
+        next.style.animation = ""; next.style.transformOrigin = "";
         bookPage = nextIdx;
         document.getElementById("book-counter").textContent = `${bookPage + 1} / ${bookPageCount}`;
       }, dur);
