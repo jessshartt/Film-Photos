@@ -62,8 +62,10 @@
 
     // ── Masonry grid fit ──
     function masonryFit(img) {
-      const rowH = 1, gap = 4;
-      const span = Math.ceil((img.getBoundingClientRect().height + gap) / (rowH + gap));
+      if (!img.naturalWidth) return;
+      const colWidth = img.offsetWidth;
+      const displayedHeight = (img.naturalHeight / img.naturalWidth) * colWidth;
+      const span = Math.ceil((displayedHeight + 4) / 5);
       img.style.gridRowEnd = "span " + span;
     }
     window.addEventListener("resize", () => {
@@ -90,7 +92,7 @@
           const img = document.createElement("img");
           img.src = src;
           img.alt = "";
-          img.loading = "lazy";
+          img.loading = "eager";
           img.onclick = () => openLightbox(i);
           img.addEventListener("load", () => masonryFit(img));
           if (img.complete) masonryFit(img);
