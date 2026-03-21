@@ -133,10 +133,17 @@
           const item = document.createElement("div");
           item.className = "grid-item";
 
+          // Placeholder span so lazy images don't collapse to 0 height
+          const colWidth = getColWidth();
+          if (colWidth) {
+            const placeholderH = colWidth * (4 / 3) + 32;
+            item.style.gridRowEnd = "span " + Math.ceil((placeholderH + 4) / 5);
+          }
+
           const img = document.createElement("img");
           img.src = src;
           img.alt = "";
-          img.loading = "eager";
+          img.loading = "lazy";
           img.onclick = () => openLightbox(i);
 
           const btn = document.createElement("button");
@@ -149,11 +156,8 @@
           item.appendChild(btn);
           container.appendChild(item);
 
-          if (img.complete && img.naturalWidth) {
-            requestAnimationFrame(() => masonryFit(item, img));
-          } else {
-            img.addEventListener("load", () => masonryFit(item, img));
-          }
+          img.addEventListener("load", () => masonryFit(item, img));
+          if (img.complete && img.naturalWidth) masonryFit(item, img);
         });
       } else {
         container.className = "scrapbook";
