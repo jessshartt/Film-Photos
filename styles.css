@@ -73,6 +73,17 @@ header h1 {
   font-size: 1.4rem;
   letter-spacing: 0.1em;
   font-weight: normal;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+header nav {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 header nav a,
