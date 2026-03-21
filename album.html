@@ -136,8 +136,12 @@
     // ── Masonry ──
     function masonryFit(img) {
       const rowH = 4, gap = 4;
-      if (!img.naturalWidth) return;
-      const h = img.offsetWidth * img.naturalHeight / img.naturalWidth;
+      if (!img.naturalWidth || !img.naturalHeight) return;
+      const grid = document.getElementById("photo-grid");
+      const cols = window.innerWidth <= 600 ? 2 : 3;
+      const colWidth = (grid.clientWidth - gap * (cols + 1)) / cols;
+      if (!colWidth) return;
+      const h = colWidth * img.naturalHeight / img.naturalWidth;
       img.style.gridRowEnd = `span ${Math.ceil((h + gap) / (rowH + gap))}`;
     }
 
