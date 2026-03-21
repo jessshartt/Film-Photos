@@ -369,20 +369,39 @@ header .back:hover { color: #eee; }
 
 .lb-prev:hover, .lb-next:hover { color: #fff; }
 
-.lb-heart {
+.lb-actions {
   position: absolute;
-  bottom: -40px;
+  bottom: -44px;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.lb-heart {
   background: none;
   border: none;
   color: #eee;
   font-size: 1.8rem;
   cursor: pointer;
   line-height: 1;
+  padding: 0;
 }
 
 .lb-heart:hover { color: #e55; }
+
+.lb-comment-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.lb-comment-btn:hover { color: #fff; }
 
 /* ── Empty message ── */
 .empty-msg {

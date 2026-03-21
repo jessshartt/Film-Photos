@@ -28,7 +28,14 @@
     <button class="lb-prev" onclick="changePhoto(-1)">‹</button>
     <div class="lb-img-wrap">
       <img id="lb-img" src="" alt="" />
-      <button class="lb-heart" id="lb-heart" onclick="toggleFavorite()">♡</button>
+      <div class="lb-actions">
+        <button class="lb-heart" id="lb-heart" onclick="toggleFavorite()">♡</button>
+        <button class="lb-comment-btn" onclick="openCommentDrawer(photos[currentIndex])">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <button class="lb-next" onclick="changePhoto(1)">›</button>
   </div>
@@ -115,14 +122,7 @@
           img.loading = "lazy";
           img.onclick = () => openLightbox(i);
 
-          const btn = document.createElement("button");
-          btn.className = "comment-btn";
-          btn.textContent = "💬";
-          btn.dataset.src = src;
-          btn.onclick = (e) => { e.stopPropagation(); openCommentDrawer(src); };
-
           item.appendChild(img);
-          item.appendChild(btn);
           container.appendChild(item);
         });
       } else {
