@@ -89,30 +89,6 @@
 
     init();
 
-    // ── Masonry ──
-    function getColWidth() {
-      const grid = document.querySelector(".grid");
-      if (!grid) return 0;
-      const cols = window.innerWidth <= 600 ? 2 : 3;
-      return (grid.clientWidth - 8 - (cols - 1) * 4) / cols;
-    }
-
-    function masonryFit(item, img) {
-      if (!img.naturalWidth) return;
-      const colWidth = getColWidth();
-      if (!colWidth) return;
-      const imgH = (img.naturalHeight / img.naturalWidth) * colWidth;
-      const totalH = imgH + 32;
-      item.style.gridRowEnd = "span " + Math.ceil((totalH + 4) / 5);
-    }
-
-    window.addEventListener("resize", () => {
-      document.querySelectorAll(".grid-item").forEach(item => {
-        const img = item.querySelector("img");
-        if (img && img.naturalWidth) masonryFit(item, img);
-      });
-    });
-
     // ── View toggle ──
     function setView(mode) {
       currentView = mode;
@@ -133,13 +109,6 @@
           const item = document.createElement("div");
           item.className = "grid-item";
 
-          // Placeholder span so lazy images don't collapse to 0 height
-          const colWidth = getColWidth();
-          if (colWidth) {
-            const placeholderH = colWidth * (4 / 3) + 32;
-            item.style.gridRowEnd = "span " + Math.ceil((placeholderH + 4) / 5);
-          }
-
           const img = document.createElement("img");
           img.src = src;
           img.alt = "";
@@ -155,9 +124,6 @@
           item.appendChild(img);
           item.appendChild(btn);
           container.appendChild(item);
-
-          img.addEventListener("load", () => masonryFit(item, img));
-          if (img.complete && img.naturalWidth) masonryFit(item, img);
         });
       } else {
         container.className = "scrapbook";

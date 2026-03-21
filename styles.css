@@ -152,13 +152,12 @@ header .back:hover { color: #eee; }
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 1px;
-  column-gap: 4px;
+  gap: 4px;
   padding: 4px;
+  align-items: start;
 }
 
 .grid-item {
-  align-self: start;
   display: flex;
   flex-direction: column;
 }
