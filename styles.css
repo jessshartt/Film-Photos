@@ -157,32 +157,14 @@ header .back:hover { color: #eee; }
   align-items: start;
 }
 
-.grid-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.grid-item img {
+.grid img {
   width: 100%;
   display: block;
   cursor: pointer;
   transition: opacity 0.2s;
 }
 
-.grid-item img:hover { opacity: 0.85; }
-
-.comment-btn {
-  background: none;
-  border: none;
-  color: #555;
-  font-size: 0.78rem;
-  padding: 5px 6px;
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-}
-
-.comment-btn:hover { color: #aaa; }
+.grid img:hover { opacity: 0.85; }
 
 /* ── Comment Drawer ── */
 #comment-overlay {

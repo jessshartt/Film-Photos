@@ -113,17 +113,12 @@
         document.body.classList.remove("scrapbook-bg");
         document.getElementById("album-header").classList.remove("light");
         photos.forEach((src, i) => {
-          const item = document.createElement("div");
-          item.className = "grid-item";
-
           const img = document.createElement("img");
           img.src = src;
           img.alt = "";
           img.loading = "lazy";
           img.onclick = () => openLightbox(i);
-
-          item.appendChild(img);
-          container.appendChild(item);
+          container.appendChild(img);
         });
       } else {
         container.className = "scrapbook";
