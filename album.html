@@ -115,15 +115,20 @@
         container.className = "grid";
         document.body.classList.remove("scrapbook-bg");
         document.getElementById("album-header").classList.remove("light");
+        const cols = window.innerWidth <= 600 ? 2 : 3;
+        const colEls = Array.from({ length: cols }, () => {
+          const col = document.createElement("div");
+          col.className = "masonry-col";
+          container.appendChild(col);
+          return col;
+        });
         photos.forEach((src, i) => {
           const img = document.createElement("img");
           img.alt = "";
           img.loading = "lazy";
           img.onclick = () => openLightbox(i);
-          img.addEventListener("load", () => masonryFit(img));
           img.src = src;
-          container.appendChild(img);
-          if (img.complete && img.naturalWidth) masonryFit(img);
+          colEls[i % cols].appendChild(img);
         });
       } else {
         container.className = "scrapbook";
@@ -132,24 +137,6 @@
         renderScrapbook(container);
       }
     }
-
-    // ── Masonry ──
-    function masonryFit(img) {
-      const rowH = 4, gap = 4;
-      if (!img.naturalWidth || !img.naturalHeight) return;
-      const grid = document.getElementById("photo-grid");
-      const cols = window.innerWidth <= 600 ? 2 : 3;
-      const colWidth = (grid.clientWidth - gap * (cols + 1)) / cols;
-      if (!colWidth) return;
-      const h = colWidth * img.naturalHeight / img.naturalWidth;
-      img.style.gridRowEnd = `span ${Math.ceil((h + gap) / (rowH + gap))}`;
-    }
-
-    window.addEventListener("resize", () => {
-      document.querySelectorAll("#photo-grid.grid img").forEach(img => {
-        if (img.complete && img.naturalWidth) masonryFit(img);
-      });
-    });
 
     // ── Comments ──
     let currentCommentSrc = null;
