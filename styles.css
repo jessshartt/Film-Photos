@@ -63,26 +63,37 @@ body {
 /* ── Header ── */
 header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 24px 20px;
+  padding: 18px 20px 12px;
   border-bottom: 1px solid #222;
+  gap: 10px;
+}
+
+.album-header-top {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.album-header-top .back {
+  position: absolute;
+  left: 0;
 }
 
 header h1 {
   font-size: 1.4rem;
   letter-spacing: 0.1em;
   font-weight: normal;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-align: center;
 }
 
 header nav {
   display: flex;
   align-items: center;
-  flex-shrink: 0;
+  gap: 0;
   white-space: nowrap;
 }
 
@@ -566,7 +577,6 @@ body.admin-page {
   color: #666;
   text-decoration: none;
   font-size: 1rem;
-  margin-left: 12px;
 }
 
 .fav-link:hover { color: #e55; }

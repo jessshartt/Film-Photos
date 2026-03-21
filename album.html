@@ -10,12 +10,15 @@
 
   <div id="page" style="display:none;">
     <header id="album-header">
-      <a href="index.html" class="back">←</a>
-      <h1 id="album-title"></h1>
+      <div class="album-header-top">
+        <a href="index.html" class="back">←</a>
+        <h1 id="album-title"></h1>
+      </div>
       <nav>
         <button class="view-toggle active" id="btn-grid" onclick="setView('grid')">Grid</button>
         <span class="toggle-divider">|</span>
         <button class="view-toggle" id="btn-scrapbook" onclick="setView('scrapbook')">Scrapbook</button>
+        <span class="toggle-divider">|</span>
         <a href="favorites.html" class="fav-link">♥</a>
       </nav>
     </header>
